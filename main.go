@@ -34,7 +34,7 @@ func main() {
 		panic(err)
 	}
 	l.Println("Successfully connected to database!")
-	r := routers.NewRoute(l)
+	r := routers.NewRoute(l, db)
 
 	s := &http.Server{
 		Addr:         ":8080",

@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"database/sql"
 	"log"
 
 	"github.com/gorilla/mux"
@@ -9,15 +10,16 @@ import (
 )
 
 type route struct {
-	l *log.Logger
+	l  *log.Logger
+	db *sql.DB
 }
 
-func NewRoute(l *log.Logger) *route {
-	return &route{l}
+func NewRoute(l *log.Logger, db *sql.DB) *route {
+	return &route{l, db}
 }
 
 func (r *route) Route() *mux.Router {
-	u := handlers.NewUser(r.l)
+	u := handlers.NewUser(r.l, r.db)
 	rs := mux.NewRouter()
 	rs.HandleFunc("/users/register", u.HandleRegister).Methods("POST")
 	// rs.HandleFunc("/users/login").Methods("POST")

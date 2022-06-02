@@ -6,16 +6,16 @@ import (
 )
 
 type response struct {
-	status int
-	data   string
+	Status int
+	Data   string
 }
 
 func ServerError(rw http.ResponseWriter, err error, code int) {
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusInternalServerError)
 	r := response{
-		status: code,
-		data:   err.Error(),
+		Status: code,
+		Data:   err.Error(),
 	}
 	json.NewEncoder(rw).Encode(r)
 }
