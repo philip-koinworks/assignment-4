@@ -20,6 +20,7 @@ type Users struct {
 }
 
 type UserRegisReq struct {
+	Id       int    `json:"id"`
 	Age      int    `json:"age"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -32,8 +33,8 @@ type UserLoginReq struct {
 }
 
 type UserRes struct {
-	StatucCode int         `json:"statusCode"`
-	Data       interface{} `json:"data"`
+	StatucCode int                    `json:"statusCode"`
+	Data       map[string]interface{} `json:"data"`
 }
 
 func NewUser(l *log.Logger, db *sql.DB) *Users {
@@ -51,9 +52,16 @@ func (u *Users) HandleRegister(rw http.ResponseWriter, r *http.Request) {
 		helpers.ServerError(rw, err, http.StatusInternalServerError)
 	}
 
-	stmt := `
+	q := `
 	INSERT INTO Users (username, email, password, age)
-	VALUES($1, $2, $3, $4)`
+	VALUES($1, $2, $3, $4) RETURNING id`
+
+	stmt, err := u.db.Prepare(q)
+	if err != nil {
+		u.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusInternalServerError)
+	}
+	defer stmt.Close()
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(ur.Password), bcrypt.MinCost)
 	if err != nil {
@@ -61,7 +69,7 @@ func (u *Users) HandleRegister(rw http.ResponseWriter, r *http.Request) {
 		helpers.ServerError(rw, err, http.StatusInternalServerError)
 	}
 
-	_, err = u.db.Exec(stmt, ur.Username, ur.Email, passHash, ur.Age)
+	err = stmt.QueryRow(ur.Username, ur.Email, passHash, ur.Age).Scan(&ur.Id)
 	if err != nil {
 		u.l.Println(err)
 		helpers.ServerError(rw, err, http.StatusInternalServerError)
@@ -70,7 +78,12 @@ func (u *Users) HandleRegister(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(UserRes{
 		StatucCode: http.StatusOK,
-		Data:       "Success registering user",
+		Data: map[string]interface{}{
+			"email":    ur.Email,
+			"age":      ur.Age,
+			"username": ur.Username,
+			"id":       ur.Id,
+		},
 	})
 }
 
@@ -123,6 +136,8 @@ func (u *Users) HandleLogin(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(UserRes{
 		StatucCode: http.StatusOK,
-		Data:       tokenString,
+		Data: map[string]interface{}{
+			"token": tokenString,
+		},
 	})
 }
