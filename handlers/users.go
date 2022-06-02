@@ -12,6 +12,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"hacktiv8.com/assignment-4/helpers"
+	"hacktiv8.com/assignment-4/models"
 )
 
 type Users struct {
@@ -46,22 +47,13 @@ func (u *Users) HandleRegister(rw http.ResponseWriter, r *http.Request) {
 
 	u.l.Println("Handling user register")
 
+	um := models.NewModels(u.db)
+
 	err := json.NewDecoder(r.Body).Decode(&ur)
 	if err != nil {
 		u.l.Println(err)
 		helpers.ServerError(rw, err, http.StatusInternalServerError)
 	}
-
-	q := `
-	INSERT INTO Users (username, email, password, age)
-	VALUES($1, $2, $3, $4) RETURNING id`
-
-	stmt, err := u.db.Prepare(q)
-	if err != nil {
-		u.l.Println(err)
-		helpers.ServerError(rw, err, http.StatusInternalServerError)
-	}
-	defer stmt.Close()
 
 	passHash, err := bcrypt.GenerateFromPassword([]byte(ur.Password), bcrypt.MinCost)
 	if err != nil {
@@ -69,7 +61,7 @@ func (u *Users) HandleRegister(rw http.ResponseWriter, r *http.Request) {
 		helpers.ServerError(rw, err, http.StatusInternalServerError)
 	}
 
-	err = stmt.QueryRow(ur.Username, ur.Email, passHash, ur.Age).Scan(&ur.Id)
+	insertedId, err := um.InsertUser(ur.Username, ur.Email, passHash, ur.Age)
 	if err != nil {
 		u.l.Println(err)
 		helpers.ServerError(rw, err, http.StatusInternalServerError)
@@ -82,21 +74,17 @@ func (u *Users) HandleRegister(rw http.ResponseWriter, r *http.Request) {
 			"email":    ur.Email,
 			"age":      ur.Age,
 			"username": ur.Username,
-			"id":       ur.Id,
+			"id":       insertedId,
 		},
 	})
 }
 
 func (u *Users) HandleLogin(rw http.ResponseWriter, r *http.Request) {
-	type User struct {
-		id       int
-		email    string
-		password string
-	}
-	var us User
 	var ul UserLoginReq
 
 	u.l.Println("Handling user login")
+
+	um := models.NewModels(u.db)
 
 	err := json.NewDecoder(r.Body).Decode(&ul)
 	if err != nil {
@@ -104,26 +92,22 @@ func (u *Users) HandleLogin(rw http.ResponseWriter, r *http.Request) {
 		helpers.ServerError(rw, err, http.StatusInternalServerError)
 	}
 
-	stmt := `
-	SELECT id, email, password FROM Users
-	WHERE email = $1`
-
-	_ = u.db.QueryRow(stmt, ul.Email).Scan(&us.id, &us.email, &us.password)
+	res, err := um.GetOneUser(ul.Email)
 	if err != nil {
 		u.l.Println(err)
-		helpers.ServerError(rw, err, http.StatusInternalServerError)
+		helpers.ServerError(rw, err, http.StatusUnauthorized)
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(us.password), []byte(ul.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(res.Password), []byte(ul.Password))
 	if err != nil {
 		u.l.Println(err)
 		helpers.ServerError(rw, err, http.StatusUnauthorized)
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":       us.id,
-		"email":    us.email,
-		"password": us.password,
+		"id":       res.Id,
+		"email":    res.Email,
+		"password": res.Password,
 	})
 
 	signingKey := []byte("secret")
@@ -140,4 +124,8 @@ func (u *Users) HandleLogin(rw http.ResponseWriter, r *http.Request) {
 			"token": tokenString,
 		},
 	})
+}
+
+func (u *Users) HandleUpdate(rw http.ResponseWriter, r *http.Request) {
+
 }
