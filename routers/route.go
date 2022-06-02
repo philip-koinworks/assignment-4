@@ -21,8 +21,9 @@ func NewRoute(l *log.Logger, db *sql.DB) *route {
 func (r *route) Route() *mux.Router {
 	u := handlers.NewUser(r.l, r.db)
 	rs := mux.NewRouter()
+
 	rs.HandleFunc("/users/register", u.HandleRegister).Methods("POST")
-	// rs.HandleFunc("/users/login").Methods("POST")
+	rs.HandleFunc("/users/login", u.HandleLogin).Methods("POST")
 	// rs.HandleFunc("/users").Methods("PUT")
 	// rs.HandleFunc("/users").Methods("DELETE")
 

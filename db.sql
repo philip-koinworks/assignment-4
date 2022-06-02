@@ -2,8 +2,8 @@ CREATE DATABASE assignment4;
 
 CREATE TABLE Users (
     id SERIAL PRIMARY KEY,
-    username text,
-    email text,
+    username text UNIQUE,
+    email text UNIQUE,
     password text,
     age numeric
 );

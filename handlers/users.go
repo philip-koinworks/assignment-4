@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/lib/pq"
@@ -25,8 +26,12 @@ type UserRegisReq struct {
 	Username string `json:"username"`
 }
 
+type UserLoginReq struct {
+	Email    string
+	Password string
+}
+
 type UserRes struct {
-	Status     string      `json:"status"`
 	StatucCode int         `json:"statusCode"`
 	Data       interface{} `json:"data"`
 }
@@ -64,8 +69,60 @@ func (u *Users) HandleRegister(rw http.ResponseWriter, r *http.Request) {
 
 	rw.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(UserRes{
-		Status:     "SUCCESS",
 		StatucCode: http.StatusOK,
 		Data:       "Success registering user",
+	})
+}
+
+func (u *Users) HandleLogin(rw http.ResponseWriter, r *http.Request) {
+	type User struct {
+		id       int
+		email    string
+		password string
+	}
+	var us User
+	var ul UserLoginReq
+
+	u.l.Println("Handling user login")
+
+	err := json.NewDecoder(r.Body).Decode(&ul)
+	if err != nil {
+		u.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusInternalServerError)
+	}
+
+	stmt := `
+	SELECT id, email, password FROM Users
+	WHERE email = $1`
+
+	_ = u.db.QueryRow(stmt, ul.Email).Scan(&us.id, &us.email, &us.password)
+	if err != nil {
+		u.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusInternalServerError)
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(us.password), []byte(ul.Password))
+	if err != nil {
+		u.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusUnauthorized)
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id":       us.id,
+		"email":    us.email,
+		"password": us.password,
+	})
+
+	signingKey := []byte("secret")
+	tokenString, err := token.SignedString(signingKey)
+	if err != nil {
+		u.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusInternalServerError)
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(UserRes{
+		StatucCode: http.StatusOK,
+		Data:       tokenString,
 	})
 }
