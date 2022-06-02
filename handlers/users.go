@@ -13,10 +13,10 @@ type Users struct {
 }
 
 type UserRegisReq struct {
-	Age      int
-	Email    string
-	Password string
-	Username string
+	Age      int    `json:"age"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Username string `json:"username"`
 }
 
 type UserRes struct {
