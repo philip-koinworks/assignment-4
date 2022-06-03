@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+
 	_ "github.com/lib/pq"
 )
 
@@ -43,4 +45,30 @@ func (m *Models) GetOneUser(email string) (*User, error) {
 	_ = m.db.QueryRow(stmt, email).Scan(&us.Id, &us.Email, &us.Password)
 
 	return &us, nil
+}
+
+func (m *Models) UpdateUser(userId int, email, username string) (*User, error) {
+	var u User
+
+	fmt.Println(email, username)
+
+	q := `
+	UPDATE Users
+	SET username = $1,
+		email = $2
+	WHERE id = $3
+	RETURNING id, age, email, username`
+
+	stmt, err := m.db.Prepare(q)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(username, email, userId).Scan(&u.Id, &u.Age, &u.Email, &u.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	return &u, nil
 }
