@@ -99,3 +99,28 @@ func (c *Comments) UpdateComment(rw http.ResponseWriter, r *http.Request) {
 		},
 	})
 }
+
+func (c *Comments) DeleteComment(rw http.ResponseWriter, r *http.Request) {
+	c.l.Println("Handling comment delete")
+
+	pm := models.NewModels(c.db)
+	vars := mux.Vars(r)
+	val, ok := vars["commentId"]
+	if !ok {
+		helpers.ServerError(rw, errors.New("Can't get params"), http.StatusInternalServerError)
+	}
+	id, _ := strconv.Atoi(val)
+	_, err := pm.DeleteComment(id)
+	if err != nil {
+		c.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusInternalServerError)
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(UserRes{
+		StatucCode: http.StatusOK,
+		Data: map[string]interface{}{
+			"message": "Your comment has been successfully deleted",
+		},
+	})
+}

@@ -55,3 +55,25 @@ func (m *Models) UpdateComment(photoId int, message string) (*Comment, error) {
 
 	return &c, nil
 }
+
+func (m *Models) DeleteComment(commentId int) (int, error) {
+	q := `
+	DELETE FROM Comments
+	WHERE id = $1
+	RETURNING id`
+
+	stmt, err := m.db.Prepare(q)
+	if err != nil {
+		return -1, err
+	}
+	defer stmt.Close()
+
+	var id int
+
+	err = stmt.QueryRow(commentId).Scan(&id)
+	if err != nil {
+		return -1, err
+	}
+
+	return id, nil
+}
