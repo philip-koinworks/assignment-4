@@ -20,17 +20,12 @@ type Users struct {
 	db *sql.DB
 }
 
-type UserRegisReq struct {
-	Id       int    `json:"id"`
-	Age      int    `json:"age"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Username string `json:"username"`
-}
-
-type UserLoginReq struct {
-	Email    string
-	Password string
+type UserReq struct {
+	Id       int    `json:"id,omitempty"`
+	Age      int    `json:"age,omitempty"`
+	Email    string `json:"email,omitempty"`
+	Password string `json:"password,omitempty"`
+	Username string `json:"username,omitempty"`
 }
 
 type UserRes struct {
@@ -43,7 +38,7 @@ func NewUser(l *log.Logger, db *sql.DB) *Users {
 }
 
 func (u *Users) HandleRegister(rw http.ResponseWriter, r *http.Request) {
-	var ur UserRegisReq
+	var ur UserReq
 
 	u.l.Println("Handling user register")
 
@@ -80,7 +75,7 @@ func (u *Users) HandleRegister(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (u *Users) HandleLogin(rw http.ResponseWriter, r *http.Request) {
-	var ul UserLoginReq
+	var ul UserReq
 
 	u.l.Println("Handling user login")
 
@@ -127,5 +122,7 @@ func (u *Users) HandleLogin(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (u *Users) HandleUpdate(rw http.ResponseWriter, r *http.Request) {
+	// var uu UserReq
 
+	u.l.Println("Handling user update")
 }

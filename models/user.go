@@ -8,6 +8,8 @@ type User struct {
 	Id       int
 	Email    string
 	Password string
+	Username string
+	Age      int
 }
 
 func (m *Models) InsertUser(username, email string, pass []byte, age int) (int, error) {
