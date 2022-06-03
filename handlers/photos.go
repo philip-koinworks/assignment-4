@@ -3,9 +3,12 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
+	"github.com/gorilla/mux"
 	"hacktiv8.com/assignment-4/helpers"
 	"hacktiv8.com/assignment-4/models"
 )
@@ -82,5 +85,48 @@ func (p *Photos) GetPhoto(rw http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(rw).Encode(PhotoRes{
 		StatucCode: http.StatusOK,
 		Data:       string(res),
+	})
+}
+
+func (p *Photos) UpdatePhoto(rw http.ResponseWriter, r *http.Request) {
+	p.l.Println("Handling user update")
+	var pr PhotoReq
+
+	pm := models.NewModels(p.db)
+
+	err := json.NewDecoder(r.Body).Decode(&pr)
+	if err != nil {
+		p.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusInternalServerError)
+	}
+	vars := mux.Vars(r)
+	val, ok := vars["photoId"]
+	if ok != true {
+		p.l.Println(err)
+		helpers.ServerError(rw, errors.New("Can't find photo id params"), http.StatusInternalServerError)
+	}
+
+	photoId, err := strconv.Atoi(val)
+	if err != nil {
+		p.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusInternalServerError)
+	}
+
+	row, err := pm.UpdatePhoto(photoId, pr.Title, pr.Caption, pr.PhotoUrl)
+	if err != nil {
+		p.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusInternalServerError)
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(PhotoRes{
+		StatucCode: http.StatusOK,
+		Data: map[string]interface{}{
+			"id":        row.Id,
+			"title":     row.Title,
+			"caption":   row.Caption,
+			"photo_url": row.PhotoUrl,
+			"user_id":   row.UserId,
+		},
 	})
 }

@@ -67,3 +67,28 @@ func (m *Models) SelectAllPhotos(userId float64) ([]*Photo, error) {
 
 	return ps, nil
 }
+
+func (m *Models) UpdatePhoto(photoId int, title, caption, url string) (*Photo, error) {
+	var p Photo
+
+	q := `
+	UPDATE Photos
+	SET title = $1,
+		caption = $2,
+		photo_url = $3
+	WHERE id = $4
+	RETURNING id, title, caption, photo_url, user_id`
+
+	stmt, err := m.db.Prepare(q)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(title, caption, url, photoId).Scan(&p.Id, &p.Title, &p.Caption, &p.PhotoUrl, &p.UserId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
+}
