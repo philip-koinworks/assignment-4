@@ -21,6 +21,8 @@ func NewRoute(l *log.Logger, db *sql.DB) *route {
 
 func (r *route) Route() *mux.Router {
 	u := handlers.NewUser(r.l, r.db)
+	p := handlers.NewPhoto(r.l, r.db)
+
 	rs := mux.NewRouter()
 
 	rs.HandleFunc("/users/register", u.HandleRegister).Methods("POST")
@@ -28,7 +30,7 @@ func (r *route) Route() *mux.Router {
 	rs.HandleFunc("/users/{userId:[0-9]+}", middlewares.Authenticate(u.HandleUpdate)).Methods("PUT")
 	rs.HandleFunc("/users", middlewares.Authorize(u.HandleDelete)).Methods("DELETE")
 
-	// rs.HandleFunc("/photos").Methods("POST")
+	rs.HandleFunc("/photos", middlewares.Authorize(p.AddPhoto)).Methods("POST")
 	// rs.HandleFunc("/photos").Methods("GET")
 	// rs.HandleFunc("/photos/{photoId}").Methods("PUT")
 	// rs.HandleFunc("/photos/{photoId}").Methods("DELETE")
