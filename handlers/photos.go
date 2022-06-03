@@ -3,7 +3,6 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -25,8 +24,8 @@ type PhotoReq struct {
 }
 
 type PhotoRes struct {
-	StatucCode int                    `json:"statusCode"`
-	Data       map[string]interface{} `json:"data"`
+	StatucCode int         `json:"statusCode"`
+	Data       interface{} `json:"data"`
 }
 
 func NewPhoto(l *log.Logger, db *sql.DB) *Photos {
@@ -52,8 +51,6 @@ func (p *Photos) AddPhoto(rw http.ResponseWriter, r *http.Request) {
 		helpers.ServerError(rw, err, http.StatusInternalServerError)
 	}
 
-	fmt.Println(*row)
-
 	rw.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(PhotoRes{
 		StatucCode: http.StatusOK,
@@ -64,5 +61,26 @@ func (p *Photos) AddPhoto(rw http.ResponseWriter, r *http.Request) {
 			"photo_url": row.PhotoUrl,
 			"user_id":   row.UserId,
 		},
+	})
+}
+
+func (p *Photos) GetPhoto(rw http.ResponseWriter, r *http.Request) {
+	p.l.Println("Handling get photos")
+
+	pm := models.NewModels(p.db)
+	id := r.Context().Value("id").(float64)
+
+	rows, err := pm.SelectAllPhotos(id)
+	if err != nil {
+		p.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusInternalServerError)
+	}
+
+	res, _ := json.Marshal(rows)
+
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(PhotoRes{
+		StatucCode: http.StatusOK,
+		Data:       string(res),
 	})
 }

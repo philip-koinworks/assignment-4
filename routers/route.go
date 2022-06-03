@@ -31,7 +31,7 @@ func (r *route) Route() *mux.Router {
 	rs.HandleFunc("/users", middlewares.Authorize(u.HandleDelete)).Methods("DELETE")
 
 	rs.HandleFunc("/photos", middlewares.Authorize(p.AddPhoto)).Methods("POST")
-	// rs.HandleFunc("/photos").Methods("GET")
+	rs.HandleFunc("/photos", middlewares.Authorize(p.GetPhoto)).Methods("GET")
 	// rs.HandleFunc("/photos/{photoId}").Methods("PUT")
 	// rs.HandleFunc("/photos/{photoId}").Methods("DELETE")
 

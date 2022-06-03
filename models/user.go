@@ -1,15 +1,31 @@
 package models
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+
 	_ "github.com/lib/pq"
 )
 
 type User struct {
-	Id       int
-	Email    string
-	Password string
-	Username string
-	Age      int
+	Id       int    `json:"id,omitempty"`
+	Email    string `json:"email,omitempty"`
+	Password string `json"password,omitempty"`
+	Username string `json:"username,omitempty"`
+	Age      int    `json:"age,omitempty"`
+}
+
+func (c User) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+func (c *User) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &c)
 }
 
 func (m *Models) InsertUser(username, email string, pass []byte, age int) (int, error) {
