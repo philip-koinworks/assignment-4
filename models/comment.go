@@ -32,3 +32,26 @@ func (m *Models) InsertComment(userId float64, photoId int, message string) (*Co
 
 	return &c, nil
 }
+
+func (m *Models) UpdateComment(photoId int, message string) (*Comment, error) {
+	var c Comment
+
+	q := `
+	UPDATE Comments
+	SET message = $1,
+	WHERE id = $2
+	RETURNING id, message, user_id, photo_id`
+
+	stmt, err := m.db.Prepare(q)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(message, photoId).Scan(&c.Id, &c.Message, &c.UserId, &c.PhotoId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &c, nil
+}

@@ -38,7 +38,7 @@ func (r *route) Route() *mux.Router {
 
 	rs.HandleFunc("/comments", middlewares.Authenticate(c.AddComments)).Methods("POST")
 	// rs.HandleFunc("/comments").Methods("GET")
-	// rs.HandleFunc("/comments/{commentId}").Methods("PUT")
+	rs.HandleFunc("/comments/{commentId:[0-9]+}", middlewares.Authorize(c.UpdateComment)).Methods("PUT")
 	// rs.HandleFunc("/comments/{commentId}").Methods("DELETE")
 
 	// rs.HandleFunc("/socialmedias").Methods("POST")
