@@ -165,3 +165,24 @@ func (u *Users) HandleUpdate(rw http.ResponseWriter, r *http.Request) {
 		},
 	})
 }
+
+func (u *Users) HandleDelete(rw http.ResponseWriter, r *http.Request) {
+	u.l.Println("Handling user update")
+
+	um := models.NewModels(u.db)
+	id := r.Context().Value("id").(float64)
+
+	_, err := um.DeleteUser(id)
+	if err != nil {
+		u.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusInternalServerError)
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(UserRes{
+		StatucCode: http.StatusOK,
+		Data: map[string]interface{}{
+			"message": "Your account has been successfully deleted",
+		},
+	})
+}

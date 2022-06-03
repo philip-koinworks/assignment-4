@@ -1,8 +1,6 @@
 package models
 
 import (
-	"fmt"
-
 	_ "github.com/lib/pq"
 )
 
@@ -50,8 +48,6 @@ func (m *Models) GetOneUser(email string) (*User, error) {
 func (m *Models) UpdateUser(userId int, email, username string) (*User, error) {
 	var u User
 
-	fmt.Println(email, username)
-
 	q := `
 	UPDATE Users
 	SET username = $1,
@@ -71,4 +67,26 @@ func (m *Models) UpdateUser(userId int, email, username string) (*User, error) {
 	}
 
 	return &u, nil
+}
+
+func (m *Models) DeleteUser(userId float64) (int, error) {
+	q := `
+	DELETE FROM Users
+	WHERE id = $1
+	RETURNING id`
+
+	stmt, err := m.db.Prepare(q)
+	if err != nil {
+		return -1, err
+	}
+	defer stmt.Close()
+
+	var id int
+
+	err = stmt.QueryRow(userId).Scan(&id)
+	if err != nil {
+		return -1, err
+	}
+
+	return id, nil
 }

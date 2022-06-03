@@ -26,7 +26,7 @@ func (r *route) Route() *mux.Router {
 	rs.HandleFunc("/users/register", u.HandleRegister).Methods("POST")
 	rs.HandleFunc("/users/login", u.HandleLogin).Methods("POST")
 	rs.HandleFunc("/users/{userId:[0-9]+}", middlewares.Authenticate(u.HandleUpdate)).Methods("PUT")
-	// rs.HandleFunc("/users").Methods("DELETE")
+	rs.HandleFunc("/users", middlewares.Authorize(u.HandleDelete)).Methods("DELETE")
 
 	// rs.HandleFunc("/photos").Methods("POST")
 	// rs.HandleFunc("/photos").Methods("GET")
