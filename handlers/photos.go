@@ -130,3 +130,28 @@ func (p *Photos) UpdatePhoto(rw http.ResponseWriter, r *http.Request) {
 		},
 	})
 }
+
+func (p *Photos) DeletePhoto(rw http.ResponseWriter, r *http.Request) {
+	p.l.Println("Handling user update")
+
+	pm := models.NewModels(p.db)
+	vars := mux.Vars(r)
+	val, ok := vars["photoId"]
+	if !ok {
+		helpers.ServerError(rw, errors.New("Can't get params"), http.StatusInternalServerError)
+	}
+	id, _ := strconv.Atoi(val)
+	_, err := pm.DeletePhoto(id)
+	if err != nil {
+		p.l.Println(err)
+		helpers.ServerError(rw, err, http.StatusInternalServerError)
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(UserRes{
+		StatucCode: http.StatusOK,
+		Data: map[string]interface{}{
+			"message": "Your photo has been successfully deleted",
+		},
+	})
+}

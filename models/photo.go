@@ -92,3 +92,25 @@ func (m *Models) UpdatePhoto(photoId int, title, caption, url string) (*Photo, e
 
 	return &p, nil
 }
+
+func (m *Models) DeletePhoto(photoId int) (int, error) {
+	q := `
+	DELETE FROM Photos
+	WHERE id = $1
+	RETURNING id`
+
+	stmt, err := m.db.Prepare(q)
+	if err != nil {
+		return -1, err
+	}
+	defer stmt.Close()
+
+	var id int
+
+	err = stmt.QueryRow(photoId).Scan(&id)
+	if err != nil {
+		return -1, err
+	}
+
+	return id, nil
+}
